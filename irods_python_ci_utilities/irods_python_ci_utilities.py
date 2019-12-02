@@ -25,7 +25,8 @@ def raise_not_implemented_for_distribution_major_version():
     raise NotImplementedError, 'not implemented for distribution [{0}] major version [{1}]'.format(copied_from_ansible.get_distribution(), get_distribution_version_major()), sys.exc_info()[2]
 
 def async_print_stream(process):
-    while True:
+    #while True:
+    while not process.stdout.closed:
         line = process.stdout.readline()
         if line == '' and process.poll() is not None:
             break
