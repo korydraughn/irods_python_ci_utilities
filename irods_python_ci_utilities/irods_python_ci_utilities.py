@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import threading
 
 from . import copied_from_ansible
 
@@ -23,6 +24,14 @@ def raise_not_implemented_for_distribution():
 def raise_not_implemented_for_distribution_major_version():
     raise NotImplementedError, 'not implemented for distribution [{0}] major version [{1}]'.format(copied_from_ansible.get_distribution(), get_distribution_version_major()), sys.exc_info()[2]
 
+def async_print_stream(process):
+    while True:
+        line = process.stdout.readline()
+        if line == '' and process.poll() is not None:
+            break
+        sys.stdout.write(line)
+        sys.stdout.flush()
+
 def subprocess_get_output(*args, **kwargs):
     kwargs['stdout'] = subprocess.PIPE
     kwargs['stderr'] = subprocess.PIPE
@@ -36,16 +45,10 @@ def subprocess_get_output(*args, **kwargs):
         data = kwargs['data']
         del kwargs['data']
     p = subprocess.Popen(*args, **kwargs)
+    t = threading.Thread(target=async_print_stream, args=(p,))
+    t.start()
     out, err = p.communicate(data)
-
-    # Print stdout of "p".
-    while True:
-        line = p.stdout.readline()
-        if line == '' and p.poll() is not None:
-            break
-        sys.stdout.write(line)
-        sys.stdout.flush()
-
+    t.join()
     if check_rc:
         if p.returncode != 0:
             raise RuntimeError('''subprocess_get_output() failed
