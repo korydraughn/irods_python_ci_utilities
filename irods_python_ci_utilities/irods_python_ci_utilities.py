@@ -45,9 +45,12 @@ def subprocess_get_output(*args, **kwargs):
         data = kwargs['data']
         del kwargs['data']
     p = subprocess.Popen(*args, **kwargs)
+    p.stdin.write(data)
     t = threading.Thread(target=async_print_stream, args=(p,))
     t.start()
-    out, err = p.communicate(data)
+    #out, err = p.communicate(data)
+    p.stdin.close()
+    out, err = p.communicate()
     t.join()
     if check_rc:
         if p.returncode != 0:
