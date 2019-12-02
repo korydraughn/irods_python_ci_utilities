@@ -37,6 +37,15 @@ def subprocess_get_output(*args, **kwargs):
         del kwargs['data']
     p = subprocess.Popen(*args, **kwargs)
     out, err = p.communicate(data)
+
+    # Print stdout of "p".
+    while True:
+        line = p.stdout.readline()
+        if line == '' and p.poll() is not None:
+            break
+        sys.stdout.write(line)
+        sys.stdout.flush()
+
     if check_rc:
         if p.returncode != 0:
             raise RuntimeError('''subprocess_get_output() failed
