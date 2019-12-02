@@ -35,23 +35,33 @@ def async_print_stream(process):
 def subprocess_get_output(*args, **kwargs):
     kwargs['stdout'] = subprocess.PIPE
     kwargs['stderr'] = subprocess.PIPE
+
     check_rc = False
     if 'check_rc' in kwargs:
         check_rc = kwargs['check_rc']
         del kwargs['check_rc']
+
     data = None
     if 'data' in kwargs:
         kwargs['stdin'] = subprocess.PIPE
         data = kwargs['data']
         del kwargs['data']
+
     p = subprocess.Popen(*args, **kwargs)
-    p.stdin.write(data)
+
+    if data != None:
+        p.stdin.write(data)
+
     t = threading.Thread(target=async_print_stream, args=(p,))
     t.start()
     #out, err = p.communicate(data)
-    p.stdin.close()
+
+    if data != None:
+        p.stdin.close()
+
     out, err = p.communicate()
     t.join()
+
     if check_rc:
         if p.returncode != 0:
             raise RuntimeError('''subprocess_get_output() failed
